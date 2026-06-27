@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 招聘智能体系统 - 能力中台</title>
+    <!-- 引入 Tailwind CSS 样式 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .active-tab {
+            border-bottom-width: 2px;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+    <!-- 导航栏 -->
+    <header class="bg-white shadow">
+        <div class="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-blue-600">🤖</span> AI 招聘智能体系统能力中台
+            </h1>
+            <span class="bg-green-100 text-green-800 text-xs px-2.5 py-1.5 rounded-full font-medium">后端在线 (Flask)</span>
+        </div>
+    </header>
+
+    <!-- 标签页切换 -->
+    <nav class="max-w-7xl mx-auto px-4 mt-6">
+        <div class="border-b border-gray-200">
+            <ul class="flex space-x-8" id="tab-headers">
+                <li>
+                    <button onclick="switchTab('qa-tab')" id="btn-qa-tab" class="py-4 px-1 text-sm font-medium border-b-2 active-tab transition">
+                        💬 招聘问答 (RAG)
+                    </button>
+                </li>
+                <li>
+                    <button onclick="switchTab('resume-tab')" id="btn-resume-tab" class="py-4 px-1 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition">
+                        📄 简历自动筛选
+                    </button>
+                </li>
+                <li>
+                    <button onclick="switchTab('interview-tab')" id="btn-interview-tab" class="py-4 px-1 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 transition">
+                        🎙️ AI 模拟面试官
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 主体内容 -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        
+        <!-- 1. 招聘问答标签页 -->
+        <div id="qa-tab" class="tab-content block">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- 左侧：常用提问参考 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                    <h3 class="font-semibold text-lg mb-4 text-gray-700">常见知识库问题测试</h3>
+                    <div class="space-y-2">
+                        <button onclick="fillQA('公司的试用期是多久？福利怎么样？')" class="w-full text-left p-3 text-sm bg-gray-50 hover:bg-blue-50 rounded-lg border border-gray-100 transition">
+                            ❓ 公司的试用期是多久？福利怎么样？
+                        </button>
+                        <button onclick="fillQA('弹性工作制具体是怎样的？')" class="w-full text-left p-3 text-sm bg-gray-50 hover:bg-blue-50 rounded-lg border border-gray-100 transition">
+                            ❓ 弹性工作制具体是怎样的？
+                        </button>
+                        <button onclick="fillQA('年终奖如何计算和发放？')" class="w-full text-left p-3 text-sm bg-gray-50 hover:bg-blue-50 rounded-lg border border-gray-100 transition">
+                            ❓ 年终奖如何计算和发放？
+                        </button>
+                    </div>
+                </div>
+                <!-- 右侧：交互对话 -->
+                <div class="md:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col min-h-[400px]">
+                    <h3 class="font-semibold text-lg mb-4 text-gray-700">向 AI 助手提问</h3>
+                    <div class="flex-1 overflow-y-auto mb-4 border border-gray-100 rounded-lg p-4 bg-gray-50" id="qa-chat-box">
+                        <div class="text-gray-400 text-sm text-center py-10">输入您想咨询的企业招聘/政策相关问题，点击发送...</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="qa-input" placeholder="输入问题..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <button onclick="sendQuestion()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition font-medium">发送</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 简历筛选标签页 -->
+        <div id="resume-tab" class="tab-content hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 左侧输入栏 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 space-y-4">
+                    <h3 class="font-semibold text-lg text-gray-700">配置简历与岗位要求</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">岗位职责描述 (Job Description)</label>
+                        <textarea id="jd-input" rows="5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">资深 Python 工程师
+职责要求：
+1. 3年以上Python实际开发经验，熟练掌握 Flask/Django 等框架。
+2. 熟悉 MySQL、Redis 的设计与优化。
+3. 熟悉常用的 LLM 模型开发与微调经验、LangChain 开发经验者优先。</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">候选人简历内容 (Resume Text)</label>
+                        <textarea id="resume-input" rows="8" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm">李大钊，28岁。
+工作背景：拥有3年半Python后端开发经验，曾主导过金融科技业务系统模块重构。
+核心技术栈：
+- 深入理解 Python，熟练使用 Flask 微服务框架。
+- 熟悉 Redis 缓存设计，独立负责过 MySQL 高并发下的调优工作。
+- 曾在业余项目里使用 LangChain 框架结合大语言模型开发过一套简单的知识库。
+- 沟通协调能力良好，具备抗压能力。</textarea>
+                    </div>
+                    <button onclick="analyzeResume()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition">
+                        ⚡ 开始简历筛选与深度评估
+                    </button>
+                </div>
+                <!-- 右侧评估报告 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col justify-between">
+                    <h3 class="font-semibold text-lg text-gray-700 mb-4">筛选结果报告</h3>
+                    <div id="resume-result-loading" class="hidden text-center py-20">
+                        <span class="inline-block animate-spin text-3xl text-blue-600">🌀</span>
+                        <p class="text-gray-500 text-sm mt-2">AI 深度分析比对中，请稍候...</p>
+                    </div>
+                    <div id="resume-result" class="space-y-4 flex-1">
+                        <div class="text-center py-20 text-gray-400 text-sm">点击左侧按钮，触发 AI 简历自动化筛选...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. AI 模拟面试标签页 -->
+        <div id="interview-tab" class="tab-content hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- 左侧面板：控制与最终评估 -->
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100 space-y-4">
+                    <h3 class="font-semibold text-lg text-gray-700">面试会话配置</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">候选人姓名</label>
+                        <input type="text" id="cand-name" value="王小五" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">应聘岗位</label>
+                        <input type="text" id="cand-job" value="前端开发工程师" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <button id="btn-start-interview" onclick="startInterview()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-lg font-medium transition">
+                        🟢 开启模拟面试
+                    </button>
+                    <hr class="my-4">
+                    <button id="btn-end-interview" onclick="endAndEvaluate()" disabled class="w-full bg-red-500 text-white py-2.5 rounded-lg font-medium opacity-50 cursor-not-allowed transition">
+                        🛑 结束面试并生成最终考评
+                    </button>
+                    <div id="eval-result-area" class="mt-4 p-4 bg-gray-50 rounded-lg text-sm border border-gray-100 hidden">
+                        <!-- 渲染评估结果 -->
+                    </div>
+                </div>
+                <!-- 右侧对话面板 -->
+                <div class="md:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col min-h-[500px]">
+                    <h3 class="font-semibold text-lg text-gray-700 mb-2">面试间</h3>
+                    <p class="text-xs text-gray-400 mb-4">系统会话 ID: <span id="span-session-id" class="font-mono">--</span></p>
+                    <div class="flex-1 overflow-y-auto mb-4 border border-gray-100 rounded-lg p-4 bg-gray-50 space-y-4 flex flex-col justify-end" id="interview-chat-box">
+                        <div class="text-gray-400 text-sm text-center py-10 my-auto">点击左侧“开启模拟面试”按钮开始。</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="interview-input" disabled placeholder="请等待面试开始..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-gray-100">
+                        <button id="btn-send-interview" onclick="sendInterviewAnswer()" disabled class="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium opacity-50 cursor-not-allowed transition">答复</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JS 逻辑控制代码 -->
+    <script>
+        let currentSessionId = "";
+
+        // 标签切换
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+            
+            document.querySelectorAll('#tab-headers button').forEach(el => el.classList.remove('active-tab'));
+            document.getElementById('btn-' + tabId).classList.add('active-tab');
+        }
+
+        // --- 1. 招聘问答模块 ---
+        function fillQA(text) {
+            document.getElementById('qa-input').value = text;
+        }
+
+        async function sendQuestion() {
+            const input = document.getElementById('qa-input');
+            const question = input.value.trim();
+            if (!question) return;
+
+            const chatBox = document.getElementById('qa-chat-box');
+            if (chatBox.innerHTML.includes("输入您想咨询")) {
+                chatBox.innerHTML = "";
+            }
+
+            // 展示提问
+            chatBox.innerHTML += `
+                <div class="flex justify-end mb-4">
+                    <div class="bg-blue-600 text-white px-4 py-2 rounded-lg max-w-xl text-sm">${question}</div>
+                </div>
+            `;
+            input.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/api/qa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.answer) {
+                    chatBox.innerHTML += `
+                        <div class="flex justify-start mb-4">
+                            <div class="bg-white border border-gray-100 shadow-sm px-4 py-2 rounded-lg max-w-xl text-sm text-gray-700">${data.answer}</div>
+                        </div>
+                    `;
+                } else {
+                    // 接口报错时展示具体的错误响应内容
+                    const errMsg = data.error || data.message || "请求失败，请检查后端服务";
+                    chatBox.innerHTML += `
+                        <div class="flex justify-start mb-4">
+                            <div class="bg-red-50 border border-red-200 text-red-700 shadow-sm px-4 py-2 rounded-lg max-w-xl text-sm">
+                                ❌ 呼叫接口失败: ${errMsg}
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                chatBox.innerHTML += `
+                    <div class="flex justify-start mb-4">
+                        <div class="bg-red-50 border border-red-200 text-red-700 shadow-sm px-4 py-2 rounded-lg max-w-xl text-sm">
+                            ❌ 网络异常: ${err}
+                        </div>
+                    </div>
+                `;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // --- 2. 简历筛选模块 ---
+        async function analyzeResume() {
+            const jd = document.getElementById('jd-input').value.trim();
+            const resume = document.getElementById('resume-input').value.trim();
+            const resultBox = document.getElementById('resume-result');
+            const loadingBox = document.getElementById('resume-result-loading');
+
+            if (!jd || !resume) {
+                alert("请先填写岗位 JD 和简历内容！");
+                return;
+            }
+
+            resultBox.innerHTML = "";
+            loadingBox.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/api/resume/screen', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ resume_text: resume, job_description: jd })
+                });
+                const data = await response.json();
+                
+                loadingBox.classList.add('hidden');
+                resultBox.innerHTML = `
+                    <div class="flex items-center justify-between border-b pb-3 mb-3">
+                        <span class="text-sm text-gray-500 font-medium">综合匹配度评分</span>
+                        <span class="text-3xl font-extrabold ${data.score >= 80 ? 'text-green-600' : 'text-yellow-600'}">${data.score} 分</span>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">匹配的技术/能力:</h4>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${data.matched_skills.map(skill => `<span class="bg-green-50 text-green-700 border border-green-200 text-xs px-2 py-0.5 rounded">${skill}</span>`).join('') || '<span class="text-gray-400 text-xs">无明显匹配</span>'}
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">缺失关键技能:</h4>
+                        <div class="flex flex-wrap gap-1.5">
+                            ${data.missing_skills.map(skill => `<span class="bg-red-50 text-red-700 border border-red-200 text-xs px-2 py-0.5 rounded">${skill}</span>`).join('') || '<span class="text-gray-400 text-xs">暂未发现缺失</span>'}
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">匹配度深度分析:</h4>
+                        <p class="text-sm text-gray-600 leading-relaxed bg-gray-50 p-3 rounded border border-gray-100">${data.suitability_analysis}</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">推荐方向/发展建议:</h4>
+                        <p class="text-sm font-medium text-blue-800 bg-blue-50 p-2.5 rounded border border-blue-100">${data.recommended_position}</p>
+                    </div>
+                `;
+            } catch (err) {
+                loadingBox.classList.add('hidden');
+                resultBox.innerHTML = `<div class="text-red-500">评估失败: ${err}</div>`;
+            }
+        }
+
+        // --- 3. AI 面试模块 ---
+        async function startInterview() {
+            const name = document.getElementById('cand-name').value.trim();
+            const job = document.getElementById('cand-job').value.trim();
+            const chatBox = document.getElementById('interview-chat-box');
+            
+            chatBox.innerHTML = '<div class="text-center text-gray-400 py-4 text-xs animate-pulse">正在进入模拟面试间，初始化面试官...</div>';
+
+            try {
+                const response = await fetch('/api/interview/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ candidate_name: name, job_title: job })
+                });
+                const data = await response.json();
+                
+                currentSessionId = data.session_id;
+                document.getElementById('span-session-id').innerText = currentSessionId;
+
+                // 开启输入域
+                document.getElementById('interview-input').disabled = false;
+                document.getElementById('interview-input').classList.remove('bg-gray-100');
+                document.getElementById('interview-input').placeholder = "请输入你的回答...";
+                
+                // 开启发送按钮与结束按钮
+                const sendBtn = document.getElementById('btn-send-interview');
+                sendBtn.disabled = false;
+                sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                const endBtn = document.getElementById('btn-end-interview');
+                endBtn.disabled = false;
+                endBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                // 显示开场白
+                chatBox.innerHTML = `
+                    <div class="flex justify-start mb-4">
+                        <div class="bg-white border border-gray-200 shadow-sm p-4 rounded-lg max-w-xl text-sm">
+                            <span class="block font-semibold text-xs text-blue-600 mb-1">AI 面试官</span>
+                            <p class="text-gray-700">${data.message}</p>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                chatBox.innerHTML = `<div class="text-red-500">建立面试失败: ${err}</div>`;
+            }
+        }
+
+        async function sendInterviewAnswer() {
+            const input = document.getElementById('interview-input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            const chatBox = document.getElementById('interview-chat-box');
+            chatBox.innerHTML += `
+                <div class="flex justify-end mb-4">
+                    <div class="bg-blue-600 text-white px-4 py-2 rounded-lg max-w-xl text-sm">${message}</div>
+                </div>
+            `;
+            input.value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch('/api/interview/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: currentSessionId, message })
+                });
+                const data = await response.json();
+                
+                chatBox.innerHTML += `
+                    <div class="flex justify-start mb-4">
+                        <div class="bg-white border border-gray-200 shadow-sm p-4 rounded-lg max-w-xl text-sm">
+                            <span class="block font-semibold text-xs text-blue-600 mb-1">AI 面试官</span>
+                            <p class="text-gray-700">${data.message}</p>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                chatBox.innerHTML += `<div class="text-red-500">通信异常: ${err}</div>`;
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function endAndEvaluate() {
+            if (!currentSessionId) return;
+
+            const evalArea = document.getElementById('eval-result-area');
+            evalArea.classList.remove('hidden');
+            evalArea.innerHTML = '<span class="inline-block animate-spin text-blue-600 mr-2">🌀</span> 正在对本场面试进行全维度智能评估报告，请稍候...';
+
+            try {
+                const response = await fetch('/api/interview/evaluate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: currentSessionId })
+                });
+                const data = await response.json();
+
+                // 禁用输入，防止再发消息
+                document.getElementById('interview-input').disabled = true;
+                document.getElementById('interview-input').classList.add('bg-gray-100');
+                
+                evalArea.innerHTML = `
+                    <h4 class="font-bold text-gray-700 mb-2 border-b pb-1 text-base">📋 面试评估结果</h4>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-gray-500 font-semibold">综合考评分：</span>
+                            <span class="font-bold text-red-600 text-sm">${data.comprehensive_score} 分</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-500 font-semibold">录用推荐等级：</span>
+                            <span class="font-bold text-green-600 text-sm">${data.decision}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 font-semibold block mb-1">表现亮点：</span>
+                            <ul class="list-disc pl-4 text-gray-600 space-y-1">
+                                ${data.pros.map(p => `<li>${p}</li>`).join('') || '<li>无</li>'}
+                            </ul>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 font-semibold block mb-1">改进空间：</span>
+                            <ul class="list-disc pl-4 text-gray-600 space-y-1">
+                                ${data.cons.map(c => `<li>${c}</li>`).join('') || '<li>无</li>'}
+                            </ul>
+                        </div>
+                        <div class="bg-gray-100 p-2.5 rounded text-gray-600 border mt-2">
+                            <strong>评价总结: </strong>${data.summary}
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                evalArea.innerHTML = `<div class="text-red-500">评估失败: ${err}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
